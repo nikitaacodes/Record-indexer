@@ -6,18 +6,19 @@ import (
 	"os"
 	"os/signal"
 	"record-indexer/internal/api"
+	"record-indexer/internal/model"
 
 	"record-indexer/internal/storage"
 	"syscall"
 )
 func main() {
 	store := storage.NewDiskStore("records.log")
-//appended at first 
+// appended at first 
 //    store.Append(model.NewRecord(1, "hello"))
 //     store.Append(model.NewRecord(2, "world"))
-//     store.Append(model.NewRecord(3, "trust-machines-are-boring"))
-//     store.Append(model.NewRecord(4, "go-is-my-new-friend"))
-//     store.Append(model.NewRecord(5, "immutable-record-vault"))
+//     store.Append(model.NewRecord(3, "learning go was not that difficult"))
+//     store.Append(model.NewRecord(4, "i hope i'll get selected "))
+//     store.Append(model.NewRecord(5, "Hope for the best"))
 //     log.Println("sample dataset written")
 
     api.RegisterHandlers(store)

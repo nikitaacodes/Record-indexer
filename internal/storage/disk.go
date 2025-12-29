@@ -19,7 +19,7 @@ func VerifyHash(r model.Record) bool {
 }
 
 type DiskStore struct {
-	filepath string // unexported → private field
+	filepath string //  private field
 }
 
 
