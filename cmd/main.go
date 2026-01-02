@@ -6,8 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"record-indexer/internal/api"
-	"record-indexer/internal/model"
-
+	
 	"record-indexer/internal/storage"
 	"syscall"
 )
