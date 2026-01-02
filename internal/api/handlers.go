@@ -2,16 +2,23 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"record-indexer/internal/model"
 	"record-indexer/internal/storage"
 	"strconv"
+	"time"
 )
-const errOnlyGET = "only GET allowed"
+
+const errOnlyGET = "Only GET allowed"
+
 func GetRecordHandler(store storage.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
 		if r.Method != "GET" {
 			http.Error(w, errOnlyGET, 405)
+			log.Printf("%s %s → 405 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
 
@@ -19,12 +26,14 @@ func GetRecordHandler(store storage.Store) http.HandlerFunc {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			http.Error(w, "Invalid ID", 400)
+			log.Printf("%s %s → 400 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
 
 		records, err := store.ReadAllSafe()
 		if err != nil {
 			http.Error(w, "data not trustworthy "+err.Error(), 500)
+			log.Printf("%s %s → 500 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
 
@@ -38,26 +47,33 @@ func GetRecordHandler(store storage.Store) http.HandlerFunc {
 
 		if !found {
 			http.Error(w, "Record not found", 404)
+			log.Printf("%s %s → 404 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
 
-		json.NewEncoder(w).Encode(rec)
+		_ = json.NewEncoder(w).Encode(rec)
+		log.Printf("%s %s → 200 (%v)", r.Method, r.URL.Path, time.Since(start))
 	}
 }
 
 func ListRecordsHandler(store storage.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
 		if r.Method != "GET" {
 			http.Error(w, errOnlyGET, 405)
+			log.Printf("%s %s → 405 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
 
 		records, err := store.ReadAllSafe()
 		if err != nil {
 			http.Error(w, "data not trustworthy "+err.Error(), 500)
+			log.Printf("%s %s → 500 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
 
+		// Pagination logic
 		limitStr := r.URL.Query().Get("limit")
 		offsetStr := r.URL.Query().Get("offset")
 
@@ -70,32 +86,69 @@ func ListRecordsHandler(store storage.Store) http.HandlerFunc {
 		if offset < 0 {
 			offset = 0
 		}
+
 		end := offset + limit
 		if end > len(records) {
 			end = len(records)
 		}
 
-		json.NewEncoder(w).Encode(records[offset:end])
+		paged := records[offset:end]
+		_ = json.NewEncoder(w).Encode(paged)
+
+		log.Printf("%s %s → 200 (%d returned) (%v)", r.Method, r.URL.Path, len(paged), time.Since(start))
 	}
 }
- func HealthHandler() http.HandlerFunc {
+
+func HealthHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
 		if r.Method != "GET" {
 			http.Error(w, errOnlyGET, 405)
+			log.Printf("%s %s → 405 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok","msg":"service is alive"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","msg":"service is alive"}`))
+		log.Printf("%s %s → 200 (%v)", r.Method, r.URL.Path, time.Since(start))
 	}
 }
+
 func IntegrityHandler(store storage.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if ds, ok := store.(*storage.DiskStore); ok {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(ds.IntegrityStatus())
+		start := time.Now()
+
+		if r.Method != "GET" {
+			http.Error(w, errOnlyGET, 405)
+			log.Printf("%s %s → 405 (%v)", r.Method, r.URL.Path, time.Since(start))
 			return
 		}
-		http.Error(w, "integrity route not supported", 500)
+
+		records, _ := store.ReadAllSafe()
+		total := len(records)
+		valid := 0
+		corrupted := 0
+
+		for _, record := range records {
+			if record.Status == "valid" {
+				valid++
+			} else {
+				corrupted++
+			}
+		}
+
+		resp := map[string]interface{}{
+			"total_records":     total,
+			"valid_records":     valid,
+			"corrupted_records": corrupted,
+			"last_checked":      time.Now().Format(time.RFC3339),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+
+		log.Printf("%s %s → 200 (%v) (checked %d records)", r.Method, r.URL.Path, time.Since(start), total)
 	}
 }
 
@@ -103,5 +156,5 @@ func RegisterHandlers(store storage.Store) {
 	http.HandleFunc("/record", GetRecordHandler(store))
 	http.HandleFunc("/records", ListRecordsHandler(store))
 	http.HandleFunc("/health", HealthHandler())
-	http.HandleFunc("/integrity", IntegrityHandler(store))
+	http.HandleFunc("/integrity/status", IntegrityHandler(store))
 }
