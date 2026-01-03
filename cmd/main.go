@@ -6,11 +6,16 @@ import (
 	"os"
 	"os/signal"
 	"record-indexer/internal/api"
-	
 	"record-indexer/internal/storage"
 	"syscall"
+
+	"github.com/joho/godotenv"
 )
 func main() {
+	err := godotenv.Load()
+	if err!= nil{
+		log.Println("no .env file found")
+	}
 	store := storage.NewDiskStore("records.log")
 // appended at first 
 //    store.Append(model.NewRecord(1, "hello"))
@@ -20,6 +25,7 @@ func main() {
 //     store.Append(model.NewRecord(5, "Hope for the best"))
 //     log.Println("sample dataset written")
 
+log.Println("loaded user:" , os.Getenv("BASIC_AUTH_USER")) //log to check
     api.RegisterHandlers(store)
 	srv := &http.Server{Addr: ":8080"}
 
