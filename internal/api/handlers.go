@@ -153,8 +153,10 @@ func IntegrityHandler(store storage.Store) http.HandlerFunc {
 }
 
 func RegisterHandlers(store storage.Store) {
-	http.HandleFunc("/record", GetRecordHandler(store))
-	http.HandleFunc("/records", ListRecordsHandler(store))
+	const limit = 10 
+	const window = 30
+	http.HandleFunc("/record", RateLimit(GetRecordHandler(store), limit, window))
+	http.HandleFunc("/records", RateLimit(ListRecordsHandler(store), limit, window))
 	http.HandleFunc("/health", HealthHandler())
-	http.HandleFunc("/integrity/status", IntegrityHandler(store))
+	http.HandleFunc("/integrity/status", RateLimit(IntegrityHandler(store),limit,window))
 }

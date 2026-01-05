@@ -30,28 +30,31 @@ func NewDiskStore(path string) *DiskStore {
 
 //for write operations
 func (ds *DiskStore) Append(record model.Record) error {
-	record.Status = "valid"
-	record.Timestamp = time.Now().Format(time.RFC3339)
+	// create the exact record we want to persist
+	r := record
+	r.Status = "valid"
+	r.Timestamp = time.Now().Format(time.RFC3339)
 
-	file, err := os.OpenFile(ds.filepath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644) //0644 file permission for only owner can read 
+	file, err := os.OpenFile(ds.filepath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-	bytes, err := json.Marshal(record)
+
+	bytes, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
 
-	_, err = writer.WriteString(string(bytes) + "\n")
-	if err != nil {
+	if _, err := writer.WriteString(string(bytes) + "\n"); err != nil {
 		return err
 	}
 
-	return writer.Flush() //pushed on disk 
+	return writer.Flush()
 }
+
 
 //for read operations
 func (ds *DiskStore) ReadAllSafe() ([]model.Record, error) {
