@@ -6,13 +6,29 @@ The service accepts records and appends them to a disk file in JSON format.
 - Records are immutable once written
 - the service keeps order of record noted
 - integrity is validated using SHA-256 hashing algo
-- the service restarts without losing data and shuts down without failures
+- the service restarts without losing data and and clean shutdowns.
 
+Security & Trust 
+- env-based Basic Auth 
+- In-memory per-IP rate limiting to prevent spam bursts
+- /health : public route
+- all other routes are protected
+- Automatic cleanup of old rate-limit entries from memory 
+ 
 API Endpoints 
-GET /health   ( system health check )
-GET /records  (list all verfied records)
-GET /record?id=<int> (fetch a single verified record by ID)
-all responses are returned in JSON 
+GET /health    |      Public     |   ( system health check )
+GET /records?limit=&offset= |  protected |(paginated list of integrity verified records)
+GET /record?id=<int>   |  Protected   |  (fetch a single verified record by ID)
+GET /integrity/status    | protected  |  returns integrity summary in JSON
+response format:
+{
+    "total_records" : 5,
+    "valid_records" : 2,
+    "corrupted_records" : 1,
+    "last_checked": "2026-01-05T..."
+}
+
+
 
 Running service locally 
 From project root: 

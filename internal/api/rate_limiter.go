@@ -8,7 +8,7 @@ import (
 )
 
 
-var	mu      sync.Mutex
+var	mu = sync.Mutex{}
 var	clients = make(map[string][]time.Time)
 
 func RateLimit(next http.HandlerFunc, limit int, windowSec int) http.HandlerFunc{

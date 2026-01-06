@@ -158,5 +158,5 @@ func RegisterHandlers(store storage.Store) {
 	http.HandleFunc("/record", BasicAuth(RateLimit(GetRecordHandler(store), limit, window)))
 	http.HandleFunc("/records", BasicAuth(RateLimit(ListRecordsHandler(store), limit, window)))
 	http.HandleFunc("/health", HealthHandler())      		//public 
-	http.HandleFunc("/integrity/status", BasicAuth(RateLimit(IntegrityHandler(store),limit,window)))
+	http.HandleFunc("/integrity/status", BasicAuth(RateLimit(IntegrityHandler(store), limit, window)))
 }
