@@ -155,8 +155,8 @@ func IntegrityHandler(store storage.Store) http.HandlerFunc {
 func RegisterHandlers(store storage.Store) {
 	const limit = 10 
 	const window = 30
-	http.HandleFunc("/record", RateLimit(GetRecordHandler(store), limit, window))
-	http.HandleFunc("/records", RateLimit(ListRecordsHandler(store), limit, window))
-	http.HandleFunc("/health", HealthHandler())
-	http.HandleFunc("/integrity/status", RateLimit(IntegrityHandler(store),limit,window))
+	http.HandleFunc("/record", BasicAuth(RateLimit(GetRecordHandler(store), limit, window)))
+	http.HandleFunc("/records", BasicAuth(RateLimit(ListRecordsHandler(store), limit, window)))
+	http.HandleFunc("/health", HealthHandler())      		//public 
+	http.HandleFunc("/integrity/status", BasicAuth(RateLimit(IntegrityHandler(store),limit,window)))
 }
